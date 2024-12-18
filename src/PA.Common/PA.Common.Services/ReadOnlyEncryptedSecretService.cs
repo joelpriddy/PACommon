@@ -24,6 +24,7 @@ namespace PA.Common.Services
         {
             _Logger = logger;
             _Encryption = encryption;
+            _Logger?.LogDebug("Constructed successfully without initialization.");
         }
 
         public ReadOnlyEncryptedSecretService(ILogger<ReadOnlyEncryptedSecretService>? logger, IEncryptionService encryption, string collectionLocation, string collectionKey)
@@ -32,6 +33,7 @@ namespace PA.Common.Services
             _Encryption = encryption;
             CollectionLocation = collectionLocation;
             CollectionKey = collectionKey;
+            _Logger?.LogDebug("Constructed successfully with initialization.");
         }
 
         public void Init(IDictionary<string, object> args)
@@ -47,6 +49,7 @@ namespace PA.Common.Services
             }
 
             EnsureInitialized();
+            _Logger?.LogDebug("Initialized.");
         }
         #endregion
 
@@ -55,14 +58,38 @@ namespace PA.Common.Services
         {
             EnsureInitialized();
 
-            return LoadSecrets().TryGetValue(key, out string? value) ? value : string.Empty;
+            try
+            {
+                return LoadSecrets().TryGetValue(key, out string? value) ? value : string.Empty;
+            }
+            catch(Exception ex)
+            {
+                _Logger?.LogError(ex, string.Empty);
+                throw;
+            }
+            finally
+            {
+                _Logger?.LogDebug($"Retrieved secret for key: {key}");
+            }
         }
 
         public async Task<string> GetSecretAsync(string key)
         {
             EnsureInitialized();
 
-            return (await LoadSecretsAsync()).TryGetValue(key, out var value) ? value : string.Empty;
+            try
+            {
+                return (await LoadSecretsAsync()).TryGetValue(key, out var value) ? value : string.Empty;
+            }
+            catch(Exception ex)
+            {
+                _Logger?.LogError(ex, string.Empty);
+                throw;
+            }
+            finally
+            {
+                _Logger?.LogDebug($"Retrieved secret asynchronously for key: {key}");
+            }
         }
         #endregion
 
