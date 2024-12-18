@@ -69,7 +69,7 @@ namespace PA.Common.Test
             Assert.AreEqual("localhost", host);
 
             _MockRoServiceLogger.Verify(
-                x => x.Log(LogLevel.Information,
+                x => x.Log(LogLevel.Debug,
                            It.IsAny<EventId>(),
                            It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("Retrieved secret for key: DB_HOST")),
                            null,
@@ -90,7 +90,7 @@ namespace PA.Common.Test
             Assert.AreEqual("TestDatabase", name);
 
             _MockRoServiceLogger.Verify(
-                x => x.Log(LogLevel.Information,
+                x => x.Log(LogLevel.Debug,
                            It.IsAny<EventId>(),
                            It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("Retrieved secret asynchronously for key: DB_NAME")),
                            null,
@@ -112,7 +112,7 @@ namespace PA.Common.Test
             Assert.AreEqual("localhost", host);
 
             _MockSecretServiceLogger.Verify(
-                x => x.Log(LogLevel.Information,
+                x => x.Log(LogLevel.Debug,
                            It.IsAny<EventId>(),
                            It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("Set secret for key: DB_HOST")),
                            null,
@@ -130,7 +130,7 @@ namespace PA.Common.Test
             Assert.IsFalse(string.IsNullOrEmpty(fileContent));
 
             _MockSecretServiceLogger.Verify(
-                x => x.Log(LogLevel.Information,
+                x => x.Log(LogLevel.Debug,
                            It.IsAny<EventId>(),
                            It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("Created a new secret vault at location")),
                            null,
@@ -149,7 +149,7 @@ namespace PA.Common.Test
             Assert.AreEqual("NewValue", newSecret);
 
             _MockSecretServiceLogger.Verify(
-                x => x.Log(LogLevel.Information,
+                x => x.Log(LogLevel.Debug,
                            It.IsAny<EventId>(),
                            It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("Set secret for key: NEW_SECRET")),
                            null,

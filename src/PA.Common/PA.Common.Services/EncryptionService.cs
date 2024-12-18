@@ -9,7 +9,7 @@ namespace PA.Common.Services
         public string Encrypt(string unencrypted, byte[] password)
         {
             using var aes = Aes.Create();
-            aes.Key = password;
+            aes.Key = DeriveKey(password, aes.KeySize / 8); // Derive the key
             aes.GenerateIV();
 
             using var encryptor = aes.CreateEncryptor(aes.Key, aes.IV);
@@ -28,13 +28,22 @@ namespace PA.Common.Services
             var encryptedBytes = Convert.FromBase64String(parts[1]);
 
             using var aes = Aes.Create();
-            aes.Key = password;
+            aes.Key = DeriveKey(password, aes.KeySize / 8); // Derive the key
             aes.IV = iv;
 
             using var decryptor = aes.CreateDecryptor(aes.Key, aes.IV);
             var decryptedBytes = decryptor.TransformFinalBlock(encryptedBytes, 0, encryptedBytes.Length);
 
             return Encoding.UTF8.GetString(decryptedBytes);
+        }
+
+        private byte[] DeriveKey(byte[] password, int keySize)
+        {
+            using var sha256 = SHA256.Create();
+            var hash = sha256.ComputeHash(password);
+
+            // Return the required number of bytes for the key
+            return hash[..keySize];
         }
 
         public async Task<string> EncryptAsync(string unencrypted, byte[] password)

@@ -14,12 +14,14 @@ namespace PA.Common.Services
         public EncryptedSecretService(ILogger<EncryptedSecretService>? logger, IEncryptionService encryption) : base(logger, encryption)
         {
             _Logger = logger;
+            _Logger?.LogDebug("Constructed successfully without initialization.");
         }
 
         public EncryptedSecretService(ILogger<EncryptedSecretService>? logger, IEncryptionService encryption, string collectionLocation, string collectionKey)
             : base(logger, encryption, collectionLocation, collectionKey)
         {
             _Logger = logger;
+            _Logger?.LogDebug("Constructed successfully with initialization.");
         }
         #endregion
 
@@ -36,54 +38,51 @@ namespace PA.Common.Services
             // Load existing secrets
             var secrets = LoadSecrets();
 
-            // Update or add the secret
-            secrets[key] = value;
-
-            // Save the updated secrets back to the file
-            SaveSecrets(secrets);
-        }
-
-        public void CreateSecretVault(string vaultLocation, string vaultKey, IDictionary<string,string>? secrets = null)
-        {
-            if (File.Exists(vaultLocation))
-            {
-                throw new IOException($"A vault already exists at {vaultLocation}.");
-            }
-
-            // Initialize an empty secret dictionary
-            var serializedSecrets = JsonSerializer.Serialize(secrets ?? new Dictionary<string, string>());
-
-            // Encrypt the vault if a key is provided
-            if (!string.IsNullOrEmpty(vaultKey))
-            {
-                var password = Convert.FromBase64String(vaultKey);
-                serializedSecrets = _Encryption.Encrypt(serializedSecrets, password);
-            }
-
-            // Write the encrypted or plain vault to the specified location
-            File.WriteAllText(vaultLocation, serializedSecrets);
-
-            // Update internal state to reference the newly created vault
-            Init(new Dictionary<string, object> {{ nameof(CollectionLocation), vaultLocation }, { nameof(CollectionKey), vaultKey }});
-        }
-        #endregion
-
-        #region Non-Public Methods
-        /// <summary>
-        /// Saves the secrets dictionary back to the file in encrypted format.
-        /// </summary>
-        /// <param name="secrets">The updated secrets dictionary.</param>
-        private void SaveSecrets(IDictionary<string, string> secrets)
-        {
+            secrets[key] = value;// Update or add the secret
+                                 // 
             var serializedSecrets = JsonSerializer.Serialize(secrets);
 
-            if (IsEncrypted)
-            {
-                var password = Convert.FromBase64String(CollectionKey);
-                serializedSecrets = _Encryption.Encrypt(serializedSecrets, password);
+            serializedSecrets = _Encryption.Encrypt(serializedSecrets, Convert.FromBase64String(CollectionKey));
+            File.WriteAllText(CollectionLocation, serializedSecrets);
+
+            _Logger?.LogDebug($"Set secret for key: {key}");
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="vaultLocation"></param>
+        /// <param name="vaultKey"></param>
+        /// <param name="secrets"></param>
+        /// <exception cref="ArgumentNullException">Occurs when the provided vaultLocation or vaultKey are null, empty, or only contain white spaces.</exception>
+        /// <exception cref="IOException">Occurs when the file name provided already exists.</exception>
+        public void CreateSecretVault(string vaultLocation, string vaultKey, IDictionary<string,string>? secrets = null)
+        {
+            if (string.IsNullOrWhiteSpace(vaultLocation)) {
+                _Logger?.LogCritical($"{nameof(vaultLocation)} must be a valid file location.");
+                throw new ArgumentNullException(nameof(vaultLocation)); 
             }
 
-            File.WriteAllText(CollectionLocation, serializedSecrets);
+            if (string.IsNullOrWhiteSpace(vaultKey)) 
+            { 
+                _Logger?.LogCritical($"{nameof(vaultKey)} must not be null, empty, or contain only white space.");
+                throw new ArgumentNullException(nameof(vaultKey)); 
+            }
+
+            if (File.Exists(vaultLocation))
+            {
+                _Logger?.LogCritical($"A file already exists at {vaultLocation}.");
+                throw new IOException($"A file already exists at {vaultLocation}.");
+            }
+
+            var serializedSecrets = JsonSerializer.Serialize(secrets ?? new Dictionary<string, string>());// Initialize an empty secret dictionary
+
+            serializedSecrets = _Encryption.Encrypt(serializedSecrets, Convert.FromBase64String(vaultKey));
+            File.WriteAllText(vaultLocation, serializedSecrets);// Write the encrypted vault to the specified location
+
+            _Logger?.LogDebug($"Created a new secret vault at location {vaultLocation}.");
+            // Update internal state to reference the newly created vault
+            Init(new Dictionary<string, object> {{ nameof(CollectionLocation), vaultLocation }, { nameof(CollectionKey), vaultKey }});
         }
         #endregion
     }

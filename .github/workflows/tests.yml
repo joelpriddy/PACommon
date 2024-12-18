@@ -1,6 +1,5 @@
 name: Run Tests
 
-# Trigger this workflow on pull requests to the main branch
 on:
   pull_request:
     branches:
@@ -12,25 +11,27 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout the code from the repository
+      # Step 1: Checkout the repository
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # Step 2: Set up .NET environment
+      # Step 2: Set up .NET
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: 7.0 # Specify the version of .NET your project uses
+          dotnet-version: 7.0 # Replace with your project's .NET version
 
       # Step 3: Restore dependencies
       - name: Restore dependencies
-        run: dotnet restore
+        run: dotnet restore PA.Common.sln
+        working-directory: src/PA.Common
 
       # Step 4: Build the solution
       - name: Build solution
-        run: dotnet build --no-restore
+        run: dotnet build PA.Common.sln --no-restore
+        working-directory: src/PA.Common
 
-      # Step 5: Run the tests
+      # Step 5: Run tests
       - name: Run tests
-        run: dotnet test --no-build --verbosity normal
-
+        run: dotnet test PA.Common.sln --no-build --verbosity normal
+        working-directory: src/PA.Common
